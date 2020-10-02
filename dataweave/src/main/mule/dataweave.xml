@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="2175cfb2-73bf-4b64-857a-250ce5352fd8" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<flow name="dataweaveFlow" doc:id="81afacd8-4a7c-4ec1-853c-b1ee8845b96e" >
+		<http:listener doc:name="Listener" doc:id="d8af1e0b-18e0-40d6-a3c1-027b4aa890de" config-ref="HTTP_Listener_config" path="/data"/>
+		<ee:transform doc:name="Transform Message" doc:id="408dc15e-e64b-4885-ad65-25bc9b79834f" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+var month=['January','February','March','April','May','June','July','August','September','October','November','December']
+
+---
+payload pluck ((value,key,index) -> {
+    user_id: value.user_id[0],
+    subscription_id: value.subscription_id[0],
+    name: value.name[0],
+    from_time: value.from_time[0],
+    to_time: value.to_time[0],
+    ((value map(item ,index)  -> {
+    	((month[index]++"_delay_1"): item.delay_1),
+    	((month[index]++"_delay_2"): item.delay_2),
+    	((month[index]++"_delay_3"): item.delay_3) } filterObject ((item1, index1) -> item1 != null) ) 
+    	)})]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="315262b0-e056-457b-8c15-8a8c6f8737e1" message="#[payload]"/>
+	</flow>
+</mule>
